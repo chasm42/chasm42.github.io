@@ -1,23 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Loan Calculator</title>
-  <style>
-    body { font-family: sans-serif; max-width: 400px; margin: 50px auto; }
-    input { width: 100%; padding: 10px; margin: 5px 0; }
-    button { padding: 10px; width: 100%; }
-    .result { margin-top: 20px; font-weight: bold; }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Compound Interest Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Loan Calculator</h1>
-  <input type="number" id="principal" placeholder="Loan Amount" required>
-  <input type="number" id="interest" placeholder="Interest Rate (%)" required>
-  <input type="number" id="years" placeholder="Years" required>
-  <button onclick="calculateLoan()">Calculate</button>
-  <div class="result" id="result"></div>
 
-  <script src="script.js"></script>
+<!-- HEADER -->
+<header class="site-header">
+  <div class="logo">Yieldora</div>
+  <span class="theme-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+    <svg class="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="5" />
+      <g stroke-width="2" stroke-linecap="round">
+        <line x1="12" y1="1" x2="12" y2="4"/>
+        <line x1="12" y1="20" x2="12" y2="23"/>
+        <line x1="1" y1="12" x2="4" y2="12"/>
+        <line x1="20" y1="12" x2="23" y2="12"/>
+        <line x1="4.6" y1="4.6" x2="6.8" y2="6.8"/>
+        <line x1="17.2" y1="17.2" x2="19.4" y2="19.4"/>
+        <line x1="17.2" y1="6.8" x2="19.4" y2="4.6"/>
+        <line x1="4.6" y1="19.4" x2="6.8" y2="17.2"/>
+      </g>
+    </svg>
+  </span>
+</header>
+
+<!-- PAGE -->
+<main class="page">
+  <div class="layout">
+
+    <!-- INPUTS -->
+    <div class="container">
+      <h1>Compound Interest Calculator</h1>
+
+<label class="input-label">Initial Investment</label>
+<div class="money-inline">
+  <span class="money-prefix">$</span>
+  <input
+    type="number"
+    id="principal"
+    value="2000"
+    min="1"
+    max="10000000"
+    step="100"
+  />
+</div>
+
+      <label class="input-label">Annual Interest Rate (%)</label>
+      <input type="number" id="rate" value="7" min="0.01" max="50" step="0.01" />
+
+      <label class="input-label">Years</label>
+      <input type="number" id="years" value="15" min="1" max="100" step="1" />
+
+      <!-- CONTRIBUTION -->
+<div class="inline-label">
+  <span>Contribution ·</span>
+  <select id="contributionFreq" class="inline-select">
+    <option value="daily">Daily</option>
+    <option value="monthly" selected>Monthly</option>
+    <option value="yearly">Yearly</option>
+  </select>
+</div>
+
+<div class="money-inline">
+  <span class="money-prefix">$</span>
+  <input
+    type="number"
+    id="contributions"
+    value="50"
+    min="0"
+    max="100000"
+    step="10"
+    placeholder="0"
+  />
+</div>
+
+
+
+
+
+      <!-- COMPOUND FREQUENCY -->
+<div class="inline-label">
+  <span>Compound Frequency ·</span>
+  <select id="compoundFreq" class="inline-select">
+    <option value="365">Daily</option>
+    <option value="12" selected>Monthly</option>
+    <option value="1">Yearly</option>
+  </select>
+</div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart">
+<div class="chart-menu">
+  <button id="chartMenuBtn">☰</button>
+  <div id="chartMenu" class="chart-menu-dropdown">
+    <button onclick="exportChart('print')">Print</button>
+    <button onclick="exportChart('pdf')">Download PDF</button>
+  </div>
+</div>
+
+
+      <div class="chart-total" id="chartTotal">Enter data to start</div>
+      <canvas id="growthChart"></canvas>
+    </div>
+
+  </div>
+</main>
+
+<script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 </body>
 </html>
