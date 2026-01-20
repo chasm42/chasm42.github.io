@@ -1,5 +1,28 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 
+
+body {
+  overflow-x: hidden;
+}
+
+.page {
+  overflow-x: hidden;
+}
+
+html, body {
+  overscroll-behavior-y: contain;
+}
+
+body {
+  -webkit-overflow-scrolling: touch;
+}
+
+.site-header {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+
 /* ---------- CSS VARIABLES ---------- */
 
 :root {
@@ -566,6 +589,8 @@ input:focus {
 
 canvas {
   touch-action: pan-y;
+  display: block;
+  max-width: 100%;
 }
 
 .menu-btn {
@@ -789,3 +814,4 @@ opacity: .55;
 .dark .login-btn {
   color: #f5f7fa;
 }
+
