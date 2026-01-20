@@ -49,6 +49,25 @@ document.addEventListener("DOMContentLoaded", () => {
   resizeCanvas();
   draw();
 
+  const menuBtn = document.querySelector(".menu-btn");
+const appMenu = document.getElementById("appMenu");
+
+menuBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  appMenu.classList.toggle("open");
+});
+
+document.addEventListener("click", () => {
+  appMenu.classList.remove("open");
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    appMenu.classList.remove("open");
+  }
+});
+
+
   window.addEventListener("resize", () => {
     resizeCanvas();
     draw();
@@ -98,10 +117,13 @@ canvas.addEventListener("pointermove", e => {
 canvas.addEventListener("pointerup", e => {
   isInteracting = false;
   canvas.releasePointerCapture(e.pointerId);
+  clearCursor(); // 🔥 THIS IS THE KEY
+
 });
 
 canvas.addEventListener("pointercancel", () => {
   isInteracting = false;
+  clearCursor();
 });
 
 });
@@ -438,6 +460,18 @@ function formatMoneyExact(value) {
   })}`;
 }
 
+function clearCursor() {
+  targetX = null;
+  rawX = null;
+
+  setTimeout(() => {
+    currentX = null;
+    draw();
+  }, 60);
+}
+
+
+//
 
 const menuBtn = document.getElementById("chartMenuBtn");
 const menu = document.getElementById("chartMenu");
@@ -463,6 +497,7 @@ function buildExportHTML() {
   ];
 
   const summaryHTML = `
+    <h3>Yieldora.ai</h3>
     <h2>Compound Interest Graph</h2>
     <div style="font-size:32px;font-weight:700;margin:10px 0;">
       ${document.querySelector(".result-amount").innerText}
@@ -529,3 +564,5 @@ function exportChart(type) {
     };
   };
 }
+
+
