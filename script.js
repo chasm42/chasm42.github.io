@@ -385,7 +385,7 @@ function updateScenarioUI() {
 
   /* ---------- LABEL ---------- */
   label.textContent =
-    total === 1 ? `Scenario ${index}` : `Scenario ${index} of ${total}`;
+    total === 1 ? `` : `Scenario ${index} of ${total}`;
 
   /* ---------- ARROW STATES ---------- */
   prevBtn.disabled = total === 1 || activeScenarioIndex === 0;
@@ -544,6 +544,7 @@ function render() {
     const i = scenarios.indexOf(s);
     drawContributionLine(s.contributionData, min, max, i);
     drawLine(s.data, min, max, i);
+
   });
 
   if (rawX !== null) {
@@ -631,7 +632,7 @@ function drawContributionLine(lineData, min, max, scenarioIndex) {
   ctx.setLineDash([]);
 }
 
-function drawCursor() {
+ function drawCursor() {
   const s = scenarios[activeScenarioIndex];
   if (!s.data.length || rawX === null) return;
 
@@ -656,8 +657,9 @@ function drawCursor() {
   const px = padding + (snappedIndex / (s.data.length - 1)) * plotWidth();
   const dark = document.body.classList.contains("dark");
 
-  // Draw vertical line
+  // Draw vertical line with smooth animation
   ctx.strokeStyle = dark ? "#9ca3af" : "#374151";
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(px, padding);
   ctx.lineTo(px, canvasHeight() - padding);
@@ -680,18 +682,23 @@ function drawCursor() {
     ctx.lineWidth = 2; // reset
   });
 
-  // Prepare data for all scenarios
+  // Prepare data for all scenarios with Y positions
   const scenarioData = scenarios.map((scenario, i) => ({
     totalValue: scenario.data[snappedIndex],
     contribValue: scenario.contributionData[snappedIndex],
     growthValue: scenario.data[snappedIndex] - scenario.contributionData[snappedIndex],
     color: getLineColor(i),
-    index: i
+    index: i,
+    py: mapY(scenario.data[snappedIndex], min, max)
   }));
 
-  // Build lines based on number of scenarios
+  // Sort by Y position (top to bottom) for proper ordering
+  const sortedScenarios = [...scenarioData].sort((a, b) => a.py - b.py);
+
+  // Build lines based on number of scenarios - ORDERED BY POSITION
   let lines = [];
-  let colorMap = []; // Track which lines should be colored
+  let colorMap = [];
+  let fontStyles = [];
   
   if (scenarios.length === 1) {
     const data = scenarioData[0];
@@ -701,44 +708,69 @@ function drawCursor() {
       `${formatMoneySmart(data.growthValue)} growth`,
       `Year ${year}`
     ];
-    colorMap = [null, null, null, null]; // No special coloring
+    colorMap = [null, null, null, null];
+    fontStyles = ['bold-large', 'normal', 'normal', 'normal'];
   } else {
-    // Two scenarios - show both with full details
+    // Two scenarios - show both ordered by Y position (higher = first)
     lines = [`Year ${year}`, ''];
     colorMap = [null, null];
+    fontStyles = ['bold', null];
     
-    scenarioData.forEach((data, idx) => {
-      lines.push(`Scenario ${idx + 1}`);
-      colorMap.push(getLineColor(idx)); // Header colored
+    sortedScenarios.forEach((data, displayIdx) => {
+      lines.push(`Scenario ${data.index + 1}`);
+      colorMap.push(data.color);
+      fontStyles.push('bold');
       
       lines.push(`  ${formatMoneySmart(data.totalValue)} total`);
       colorMap.push(null);
+      fontStyles.push('bold-medium');
       
       lines.push(`  ${formatMoneySmart(data.contribValue)} principal`);
       colorMap.push(null);
+      fontStyles.push('normal');
       
       lines.push(`  ${formatMoneySmart(data.growthValue)} growth`);
       colorMap.push(null);
+      fontStyles.push('normal');
       
-      if (idx < scenarioData.length - 1) {
+      if (displayIdx < sortedScenarios.length - 1) {
         lines.push('');
         colorMap.push(null);
+        fontStyles.push(null);
       }
     });
   }
 
-  ctx.font = "15px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif";
+  // Set default font for measurement
+  ctx.font = "15px Candara, 'Segoe UI', system-ui, sans-serif";
 
   const paddingX = 12;
   const paddingY = 10;
   const lineHeight = 18;
 
   // Calculate box dimensions
-  const textWidths = lines.map(l => l === '' ? 0 : ctx.measureText(l).width);
+  const textWidths = lines.map((l, i) => {
+    if (l === '') return 0;
+    const style = fontStyles[i];
+    if (style === 'bold-large') {
+      ctx.font = "bold 20px Candara, 'Segoe UI', system-ui, sans-serif";
+    } else if (style === 'bold-medium') {
+      ctx.font = "bold 16px Candara, 'Segoe UI', system-ui, sans-serif";
+    } else if (style === 'bold') {
+      ctx.font = "bold 15px Candara, 'Segoe UI', system-ui, sans-serif";
+    } else {
+      ctx.font = "15px Candara, 'Segoe UI', system-ui, sans-serif";
+    }
+    return ctx.measureText(l).width;
+  });
   const boxWidth = Math.max(...textWidths) + paddingX * 2;
   const boxHeight = lines.length * lineHeight + paddingY * 2;
 
-  const py = mapY(s.data[snappedIndex], min, max);
+  // Use the midpoint between the two scenarios for positioning
+  const py = scenarios.length === 1 
+    ? mapY(s.data[snappedIndex], min, max)
+    : (sortedScenarios[0].py + sortedScenarios[sortedScenarios.length - 1].py) / 2;
+
   let boxX = px + 12;
   if (boxX + boxWidth > canvasWidth() - 8) {
     boxX = px - boxWidth - 12;
@@ -814,18 +846,20 @@ function drawCursor() {
   
   ctx.lineWidth = 2; // reset
 
-  // Draw text with color coding
+  // Draw text with color coding and dynamic styling
   lines.forEach((text, i) => {
     if (text === '') return; // skip spacer
     
-    // Determine font style
-    if (scenarios.length === 1) {
-      ctx.font = "15px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif";
-
+    // Apply font style based on fontStyles array
+    const style = fontStyles[i];
+    if (style === 'bold-large') {
+      ctx.font = "bold 20px Candara, 'Segoe UI', system-ui, sans-serif";
+    } else if (style === 'bold-medium') {
+      ctx.font = "bold 16px Candara, 'Segoe UI', system-ui, sans-serif";
+    } else if (style === 'bold') {
+      ctx.font = "bold 15px Candara, 'Segoe UI', system-ui, sans-serif";
     } else {
-      // For multi-scenario, make scenario headers bold
-      const isHeader = text.startsWith('Scenario');
-      ctx.font = "15px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif";
+      ctx.font = "15px Candara, 'Segoe UI', system-ui, sans-serif";
     }
     
     // Apply color
@@ -838,7 +872,7 @@ function drawCursor() {
     ctx.fillText(text, boxX + paddingX, boxY + paddingY + (i + 1) * lineHeight - 6);
   });
 }
-
+ 
 /* ===============================
    HELPERS
 ================================ */
@@ -890,6 +924,7 @@ function clearCursor() {
 function getLineColor(i) {
   return i === 0 ? "#00ae49" : "#2563eb";
 }
+
 
 /* ===============================
    ROUNDED RECT HELPER
